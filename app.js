@@ -119,12 +119,12 @@ var MapViewModel = function(map, mapModel) {
 	});
 
 	self.allPlaces.forEach( function (place) {
-	var markerOptions = {
-		map: self.googleMap,
-		position: place.cord,
-		animation: google.maps.Animation.DROP,
-	};
-	place.marker = new google.maps.Marker(markerOptions);
+        var markerOptions = {
+            map: self.googleMap,
+            position: place.cord,
+            animation: google.maps.Animation.DROP,
+        };
+        place.marker = new google.maps.Marker(markerOptions);
 	});
 
 	self.visiblePlaces = ko.observableArray();
@@ -149,6 +149,8 @@ var MapViewModel = function(map, mapModel) {
 		});
 	};
 
+    self.userInput.subscribe(self.filterMarkers);
+
 	function Place(dataObj) {
 		this.name = dataObj.name;
 		this.cord = dataObj.cord;
@@ -158,14 +160,17 @@ var MapViewModel = function(map, mapModel) {
     return self;
 };
 
+var mapModel = new MapModel();
+
 // Initialise the Google Map with pre-defined centre
 function initMap() {
 	var map = new google.maps.Map(document.getElementById('map'), {
-		//center: { lat: 40.786998, lng: -73.975664 },
         center: {lat: 37.587281, lng: -122.328408},
+        styles: mapModel.styleMap,
 		zoom: 9
 	});
 	// MapView.addLocationMarkers();
-    var mapViewModel = new MapViewModel(map, new MapModel());
+    var mapViewModel = new MapViewModel(map, mapModel);
     ko.applyBindings(mapViewModel);
 }
+

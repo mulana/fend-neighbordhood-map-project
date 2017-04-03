@@ -6,6 +6,7 @@
 	<meta name="author" content="Ana Stankovic">
 	<title>Neighbordhood Map</title>
 	<link href="style.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/bootstrap-grid.css">
 	<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBd-X_oCZQ-_wz40ZQIhc-aGg8N-4czNoE&v=3&callback=initMap"></script>
 	<!-- <script async src="src/js/main.js"></script> -->
 </head>
@@ -13,20 +14,21 @@
 	<div class="container">
 	<div class="options-box">
 		<h1>Let's explore Peninsula Playgrounds</h1>
-		<div>
-			<input id="show-listings" type="button" value="Show on Map">
-			<input id="hide-listings" type="button" value="Hide on Map">
-		</div>
+    <div id="form" class="row">
+      <div class="col-md-12">
+        <b>Filter: </b>
+        <input type="text" data-bind="value: userInput, valueUpdate: 'keyup'">
+      </div>
+      <div class="col-md-12">
+        <input id="show-listings" type="button" value="Show on Map">
+        <input id="hide-listings" type="button" value="Hide on Map">
+      </div>
+    </div>
 		<aside id="playgrounds-list">
 			<ul data-bind="foreach: visiblePlaces">
 			    <li data-bind="text: name"></li>
 			</ul>
 		</aside>
-		<!-- <div id="floating-panel">
-			<b>Place: </b>
-			<input data-bind="value: userInput" />
-			<button data-bind="click: filterMarkers">Filter</button>
-		</div> -->
 	</div>
 	<div id="map">
 		<p class="wait-message">LOADING Google Maps ...</p>
