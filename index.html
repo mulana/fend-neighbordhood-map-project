@@ -11,28 +11,32 @@
 	<!-- <script async src="src/js/main.js"></script> -->
 </head>
 <body>
-	<div class="container">
-	<div class="options-box">
-		<h1>Let's explore Peninsula Playgrounds</h1>
-    <div id="form" class="row">
-      <div class="col-md-12">
-        <b>Filter: </b>
-        <input type="text" data-bind="value: userInput, valueUpdate: 'keyup'">
+	<div class="container-fluid">
+    <div class="row">
+      <div class="options-box col-md-3">
+        <h1>Let's explore Peninsula Playgrounds</h1>
+        <div id="form" class="row">
+          <div class="col-md-12">
+            <b>Filter: </b>
+            <input type="text" data-bind="value: userInput, valueUpdate: 'keyup'">
+          </div>
+          <div class="col-md-12">
+            <input id="show-listings" type="button" value="Show on Map" data-bind="click: showAll">
+            <input id="hide-listings" type="button" value="Hide on Map" data-bind="click: hideAll">
+          </div>
+          <div class="col-md-12">
+            <aside id="playgrounds-list">
+              <ul data-bind="foreach: visiblePlaces">
+                <li data-bind="text: name"></li>
+              </ul>
+            </aside>
+          </div>
+        </div>
       </div>
-      <div class="col-md-12">
-        <input id="show-listings" type="button" value="Show on Map">
-        <input id="hide-listings" type="button" value="Hide on Map">
+      <div id="map" class="col-md-9">
+        <p class="wait-message">LOADING Google Maps ...</p>
       </div>
     </div>
-		<aside id="playgrounds-list">
-			<ul data-bind="foreach: visiblePlaces">
-			    <li data-bind="text: name"></li>
-			</ul>
-		</aside>
-	</div>
-	<div id="map">
-		<p class="wait-message">LOADING Google Maps ...</p>
-	</div>
 	</div>
     <script src="knockout-3.4.2.js"></script>
     <script src="jquery-3.2.0.min.js"></script>

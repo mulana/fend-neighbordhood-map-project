@@ -118,20 +118,21 @@ var MapViewModel = function(map, mapModel) {
 		self.allPlaces.push(new Place(place));
 	});
 
-	self.allPlaces.forEach( function (place) {
+
+	self.visiblePlaces = ko.observableArray();
+
+    self.allPlaces.forEach( function (place) {
         var markerOptions = {
             map: self.googleMap,
             position: place.cord,
             animation: google.maps.Animation.DROP,
         };
         place.marker = new google.maps.Marker(markerOptions);
-	});
+    });
+    self.allPlaces.forEach( function (place) {
+        self.visiblePlaces.push(place);
+    });
 
-	self.visiblePlaces = ko.observableArray();
-
-	self.allPlaces.forEach( function (place) {
-		self.visiblePlaces.push(place);
-	});
 
 	self.userInput = ko.observable('');
 
@@ -148,6 +149,15 @@ var MapViewModel = function(map, mapModel) {
 			place.marker.setMap(self.googleMap);
 		});
 	};
+    self.showAll = function() {
+        self.filterMarkers();
+    };
+    self.hideAll = function() {
+        self.allPlaces.forEach(function (place) {
+            place.marker.setMap(null);
+        });
+        self.visiblePlaces.removeAll();
+    };
 
     self.userInput.subscribe(self.filterMarkers);
 
