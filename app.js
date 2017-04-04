@@ -1,18 +1,9 @@
-//MODEL
+/** 
+ * The main model for the page.
+ * It contains plaground data and style for the google map.
+ */
 var MapModel = function() {
-
-	// //Display google maps in div with class map
-	this.mapDiv = document.getElementById('map');
-	//Google map point on coordinate of San Mateo
-	this.mapCenter = ko.observableArray([{ lat: 37.562992, lng: -122.325525}]);
-	//Set Map type : roadmap, satellite, hybrid, terrain
-	//  mapTypeId: 'terrain',
-	this.namePlaygrounds = ["Koret Children's Quarter Playground",
-		"Coyote Point Recreation Area",
-		"Ryder Court Park",
-		"Happy Hollow Park and Zoo",
-		"Gilroy Gardens Family Theme Park"];
-	//Location (lat + lng) of the Playgrounds in Bay Area that I want to show on the map
+    //Location (lat + lng) of the Playgrounds in Bay Area that I want to show on the map
 	this.locPlaygrounds = [{
 		name: "Koret Children's Quarter Playground",
 		address: "San Francisco",
@@ -105,24 +96,36 @@ var MapModel = function() {
 	}];
 };
 
+/**
+ * Mini class used to store name, coordinate, and marker of a plaground
+ */
+var Place = function (dataObj) {
+    this.name = dataObj.name;
+    this.cord = dataObj.cord;
+    this.marker = null
+}
+
+/**
+ * Main MapViewModel. Connects everything on the page.
+ */
 var MapViewModel = function(map, mapModel, api) {
 	var self = this;
 
 	//Google Maps
-
 	self.googleMap = map;
     self.api = api;
 
 	self.allPlaces = [];
-    var locationList = mapModel.locPlaygrounds;
-	locationList.forEach( function (place) {
-		self.allPlaces.push(new Place(place));
-	});
 
-
+    // binded array that shows pins on the page
 	self.visiblePlaces = ko.observableArray();
 
-    self.allPlaces.forEach( function (place) {
+    // create places objects out of playground locations models
+    // places objects are used to display pins and info windows
+	mapModel.locPlaygrounds.forEach( function (playground) {
+        var place = new Place(playground);
+		self.allPlaces.push(place);
+
         var markerOptions = {
             map: self.googleMap,
             position: place.cord,
@@ -133,14 +136,16 @@ var MapViewModel = function(map, mapModel, api) {
             api.getInfo(place.cord, place.name, self.googleMap, place.marker);
         });
 
-    });
-    self.allPlaces.forEach( function (place) {
         self.visiblePlaces.push(place);
-    });
+	});
 
 
+    // observable for filter field
 	self.userInput = ko.observable('');
 
+
+    // display pins that match filter content
+    // basically only ones that have filter string in its name
 	self.filterMarkers = function() {
 		var searchInput = self.userInput().toLowerCase();
 		self.visiblePlaces.removeAll();
@@ -164,17 +169,15 @@ var MapViewModel = function(map, mapModel, api) {
         self.visiblePlaces.removeAll();
     };
 
+    // on every change to user input do the filtering
     self.userInput.subscribe(self.filterMarkers);
-
-	function Place(dataObj) {
-		this.name = dataObj.name;
-		this.cord = dataObj.cord;
-		this.marker = null
-	}
 
     return self;
 };
 
+
+// Use foursquare api to obtain formatted address of the plaground and the number
+// of checkins. The result is displayed to info window.
 var FourSquareApi = function() {
 
     var client_id = 'T0W2LHGFLB2DOYSCE02MMGS2TVYBDWJHPGRHNOSTZQIVHP4Q';
@@ -183,21 +186,8 @@ var FourSquareApi = function() {
     var endpoint = 'venues/search?';
 
 
-    function printVenues(venuesArr){  
-        for (var i in venuesArr){
-
-            var venue = venuesArr[i];
-            console.log(venue);
-            /* 
-               var str = '<p><strong>' + venue.name + '</strong> ';   
-               str += venue.location.lat + ',';
-               str += venue.location.lng;
-               str += '</p>';
-               $('#display').append(str);
-               */
-        }
-    }
-
+    // Get info about the venue that matches geo location.
+    // Display info window with formatted address and the number of checkins.
     this.getInfo = function(cord, name, map, marker) {
         var params = 'll=' + cord.lat + ',' + cord.lng;
         var query = '&query=' + name + '&intent=match';
@@ -205,10 +195,13 @@ var FourSquareApi = function() {
         var url = base_url + endpoint + params + query + key;
         $.get(url, function (result) {
             var venues = result.response.venues;
-            var venue = venues[0];
+            var content = "<strong>Error:</strong> wasn't able to find any venue with query:<br><i>" + name + "</i>";
+            if(venues.length > 0) {
+                var venue = venues[0];
 
-            var content = "<strong>" + name + "</strong><br><br>" + venue.location.formattedAddress.join("<br>");
-            content += '<br><br><i>Total checkins:</i> ' + venue.stats.checkinsCount;
+                content = "<strong>" + name + "</strong><br><br>" + venue.location.formattedAddress.join("<br>");
+                content += '<br><br><i>Total checkins:</i> ' + venue.stats.checkinsCount;
+            }
 
             var infowindow = new google.maps.InfoWindow({
                 content: content
@@ -222,14 +215,13 @@ var FourSquareApi = function() {
 var mapModel = new MapModel();
 var fourSquareApi = new FourSquareApi();
 
-// Initialise the Google Map with pre-defined centre
+// Initialise the Google Map with pre-defined center
 function initMap() {
 	var map = new google.maps.Map(document.getElementById('map'), {
         center: {lat: 37.587281, lng: -122.328408},
         styles: mapModel.styleMap,
 		zoom: 9
 	});
-	// MapView.addLocationMarkers();
     var mapViewModel = new MapViewModel(map, mapModel, fourSquareApi);
     ko.applyBindings(mapViewModel);
 }
