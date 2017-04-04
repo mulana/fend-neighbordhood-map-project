@@ -105,12 +105,13 @@ var MapModel = function() {
 	}];
 };
 
-var MapViewModel = function(map, mapModel) {
+var MapViewModel = function(map, mapModel, api) {
 	var self = this;
 
 	//Google Maps
 
 	self.googleMap = map;
+    self.api = api;
 
 	self.allPlaces = [];
     var locationList = mapModel.locPlaygrounds;
@@ -128,6 +129,10 @@ var MapViewModel = function(map, mapModel) {
             animation: google.maps.Animation.DROP,
         };
         place.marker = new google.maps.Marker(markerOptions);
+        place.marker.addListener('click', function() {
+            api.getInfo(place.cord, place.name, self.googleMap, place.marker);
+        });
+
     });
     self.allPlaces.forEach( function (place) {
         self.visiblePlaces.push(place);
@@ -170,7 +175,52 @@ var MapViewModel = function(map, mapModel) {
     return self;
 };
 
+var FourSquareApi = function() {
+
+    var client_id = 'T0W2LHGFLB2DOYSCE02MMGS2TVYBDWJHPGRHNOSTZQIVHP4Q';
+    var client_secret = 'SBMWUWAYFL0ZYEVNP0OR4AHWDY0SEYDESHMEX1OW5HIJPVW4';
+    var base_url = 'https://api.foursquare.com/v2/';
+    var endpoint = 'venues/search?';
+
+
+    function printVenues(venuesArr){  
+        for (var i in venuesArr){
+
+            var venue = venuesArr[i];
+            console.log(venue);
+            /* 
+               var str = '<p><strong>' + venue.name + '</strong> ';   
+               str += venue.location.lat + ',';
+               str += venue.location.lng;
+               str += '</p>';
+               $('#display').append(str);
+               */
+        }
+    }
+
+    this.getInfo = function(cord, name, map, marker) {
+        var params = 'll=' + cord.lat + ',' + cord.lng;
+        var query = '&query=' + name + '&intent=match';
+        var key = '&client_id=' + client_id + '&client_secret=' + client_secret + '&v=20161016';
+        var url = base_url + endpoint + params + query + key;
+        $.get(url, function (result) {
+            var venues = result.response.venues;
+            var venue = venues[0];
+
+            var content = "<strong>" + name + "</strong><br><br>" + venue.location.formattedAddress.join("<br>");
+            content += '<br><br><i>Total checkins:</i> ' + venue.stats.checkinsCount;
+
+            var infowindow = new google.maps.InfoWindow({
+                content: content
+            });
+
+            infowindow.open(map, marker);
+        });
+    }
+};
+
 var mapModel = new MapModel();
+var fourSquareApi = new FourSquareApi();
 
 // Initialise the Google Map with pre-defined centre
 function initMap() {
@@ -180,7 +230,6 @@ function initMap() {
 		zoom: 9
 	});
 	// MapView.addLocationMarkers();
-    var mapViewModel = new MapViewModel(map, mapModel);
+    var mapViewModel = new MapViewModel(map, mapModel, fourSquareApi);
     ko.applyBindings(mapViewModel);
 }
-
