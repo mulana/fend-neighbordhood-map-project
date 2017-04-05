@@ -7,3 +7,5 @@ The project was done as part of [Front-End Web Developer Nanodegree](https://www
 ### Running instructions
 
 In order to see the app in action open the index.html in your favorite browser. The map containing playgrounds around the Peninsula will be shown. Click on the playground icon in order to see additional info containing address and the number of checkins for that specific playground.
+
+![Screenshot](/images/neighborhood-map-screenshot.png?raw=true "Neighborhood map - playgrounds")
