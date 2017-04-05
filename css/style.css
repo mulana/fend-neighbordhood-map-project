@@ -10,6 +10,20 @@ input {
   font-size: 12px;
 }
 
+li {
+  list-style-type: none; 
+  background: white;
+  cursor: pointer;
+  padding: 0.3em;
+}
+
+li:hover {
+  background: #eee;
+}
+ul {
+  padding: 0;
+}
+
 h1 {
   color: #525454;
   font-size: 22px;
@@ -17,10 +31,21 @@ h1 {
   text-align: center;
 }
 
+.toggle-menu {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 99999;
+    background: white;
+    padding: 10px;
+}
+
 #map {
   bottom:0px;
   height: 100%;
+  width: 100%;
   position: absolute;
+  top: 0;
   right: 0;
 }
 

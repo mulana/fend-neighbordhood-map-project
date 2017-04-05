@@ -102,8 +102,8 @@ var MapModel = function() {
 var Place = function (dataObj) {
     this.name = dataObj.name;
     this.cord = dataObj.cord;
-    this.marker = null
-}
+    this.marker = null;
+};
 
 /**
  * Main MapViewModel. Connects everything on the page.
@@ -134,7 +134,7 @@ var MapViewModel = function(map, mapModel, api) {
         };
         place.marker = new google.maps.Marker(markerOptions);
         place.marker.addListener('click', function() {
-            api.getInfo(place.cord, place.name, self.googleMap, place.marker);
+            self.showOnMap(place);
         });
 
         self.visiblePlaces.push(place);
@@ -144,30 +144,56 @@ var MapViewModel = function(map, mapModel, api) {
     // observable for filter field
 	self.userInput = ko.observable('');
 
+    self.toggleVisible = ko.observable(true);
+    self.toggleMenu = function() {
+        self.toggleVisible(!self.toggleVisible());
+    };
+
+    self.visiblePlaces = ko.computed(function() {
+        var searchInput = self.userInput();
+        if (!searchInput) {
+            return self.allPlaces;
+        } else {
+            return ko.utils.arrayFilter(self.allPlaces, function(item) {
+                return item.name.toLowerCase().indexOf(searchInput.toLowerCase()) !== -1;
+            });
+        }
+    }, self);
 
     // display pins that match filter content
     // basically only ones that have filter string in its name
 	self.filterMarkers = function() {
-		var searchInput = self.userInput().toLowerCase();
-		self.visiblePlaces.removeAll();
+
 		self.allPlaces.forEach( function (place) {
-			place.marker.setMap(null);
-			if (place.name.toLowerCase().indexOf(searchInput) !== -1) {
-				self.visiblePlaces.push(place);
-			}
-		});
+			place.marker.setVisible(false);
+        });
+
 		self.visiblePlaces().forEach( function (place) {
-			place.marker.setMap(self.googleMap);
+			place.marker.setVisible(true);
 		});
 	};
-    self.showAll = function() {
-        self.filterMarkers();
-    };
-    self.hideAll = function() {
-        self.allPlaces.forEach(function (place) {
-            place.marker.setMap(null);
+
+
+    var infowindow = new google.maps.InfoWindow({
+        content: ''
+    });
+    var lastMarker;
+    infowindow.addListener('closeclick', function() {
+        if(lastMarker) {
+            lastMarker.setAnimation(null);
+        }
+    });
+
+    self.showOnMap = function(place) {
+        api.getInfo(place.cord, place.name, function(content) {
+            infowindow.setContent(content);
+            lastMarker = place.marker;
+            infowindow.open(self.googleMap, place.marker);
         });
-        self.visiblePlaces.removeAll();
+        if(lastMarker) {
+            lastMarker.setAnimation(null);
+        }
+        place.marker.setAnimation(google.maps.Animation.BOUNCE);
     };
 
     // on every change to user input do the filtering
@@ -186,17 +212,11 @@ var FourSquareApi = function() {
     var base_url = 'https://api.foursquare.com/v2/';
     var endpoint = 'venues/search?';
 
-    function showInfoWindow(content, map, marker) {
-    	var infowindow = new google.maps.InfoWindow({
-            content: content
-        });
-
-        infowindow.open(map, marker);
-    }
 
     // Get info about the venue that matches geo location.
     // Display info window with formatted address and the number of checkins.
-    this.getInfo = function(cord, name, map, marker) {
+    // This function is async so we need to use callback (cb) to return content to caller.
+    this.getInfo = function(cord, name, cb) {
         var params = 'll=' + cord.lat + ',' + cord.lng;
         var query = '&query=' + name + '&intent=match';
         var key = '&client_id=' + client_id + '&client_secret=' + client_secret + '&v=20161016';
@@ -205,22 +225,31 @@ var FourSquareApi = function() {
 			url: url,
     		type: 'GET',
     		success: function (result) {
-	            var venues = result.response.venues;
-	            var content = "<strong>Error:</strong> wasn't able to find any venue with query:<br><i>" + name + "</i>";
-	            if(venues.length > 0) {
-	                var venue = venues[0];
+                var content = "<strong>Error:</strong> wasn't able to find any venue with query:<br><i>" + name + "</i>";
+                if(result && result.response && result.response.venues && result.response.venues.length > 0) {
+                    var venue = result.response.venues[0];
 
-	                content = "<strong>" + name + "</strong><br><br>" + venue.location.formattedAddress.join("<br>");
-	                content += '<br><br><i>Total checkins:</i> ' + venue.stats.checkinsCount;
-	            }
-	            showInfoWindow(content, map, marker);
-	        },
+                    var formattedAddress = (venue.location && venue.location.formattedAddress) ? venue.location.formattedAddress : [];
+
+                    content = "<strong>" + name + "</strong><br><br>" + formattedAddress.join("<br>");
+                    if(venue && venue.stats) {
+                        var checkins = venue.stats.checkinsCount || 0;
+                        content += '<br><br><i>Total checkins:</i> ' + checkins;
+                    }
+                    content += '<br><br><span><i style="font-size: 0.8em">Powered by Foursquare API</i>';
+                }
+                if(cb) {
+                    cb.call(this, content);
+                }
+            },
             error: function(jqXHR, status, error) {
             	var content = "<strong>Error:</strong> " + status + " - " + error;
-            	showInfoWindow(content, map, marker);
+                if(cb) {
+                    cb.call(this, content);
+                }
             }
         });
-    }
+    };
 };
 
 var mapModel = new MapModel();
@@ -236,3 +265,8 @@ function initMap() {
     var mapViewModel = new MapViewModel(map, mapModel, fourSquareApi);
     ko.applyBindings(mapViewModel);
 }
+
+function showMapError() {
+    $('.map-message').html('<strong>Error:<strong> Unable to load Google Map');
+}
+
