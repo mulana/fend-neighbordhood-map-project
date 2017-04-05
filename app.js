@@ -130,6 +130,7 @@ var MapViewModel = function(map, mapModel, api) {
             map: self.googleMap,
             position: place.cord,
             animation: google.maps.Animation.DROP,
+            icon: 'images/playground-32.png'
         };
         place.marker = new google.maps.Marker(markerOptions);
         place.marker.addListener('click', function() {
