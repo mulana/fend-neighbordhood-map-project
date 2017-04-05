@@ -186,6 +186,13 @@ var FourSquareApi = function() {
     var base_url = 'https://api.foursquare.com/v2/';
     var endpoint = 'venues/search?';
 
+    function showInfoWindow(content, map, marker) {
+    	var infowindow = new google.maps.InfoWindow({
+            content: content
+        });
+
+        infowindow.open(map, marker);
+    }
 
     // Get info about the venue that matches geo location.
     // Display info window with formatted address and the number of checkins.
@@ -194,21 +201,24 @@ var FourSquareApi = function() {
         var query = '&query=' + name + '&intent=match';
         var key = '&client_id=' + client_id + '&client_secret=' + client_secret + '&v=20161016';
         var url = base_url + endpoint + params + query + key;
-        $.get(url, function (result) {
-            var venues = result.response.venues;
-            var content = "<strong>Error:</strong> wasn't able to find any venue with query:<br><i>" + name + "</i>";
-            if(venues.length > 0) {
-                var venue = venues[0];
+        $.ajax({
+			url: url,
+    		type: 'GET',
+    		success: function (result) {
+	            var venues = result.response.venues;
+	            var content = "<strong>Error:</strong> wasn't able to find any venue with query:<br><i>" + name + "</i>";
+	            if(venues.length > 0) {
+	                var venue = venues[0];
 
-                content = "<strong>" + name + "</strong><br><br>" + venue.location.formattedAddress.join("<br>");
-                content += '<br><br><i>Total checkins:</i> ' + venue.stats.checkinsCount;
+	                content = "<strong>" + name + "</strong><br><br>" + venue.location.formattedAddress.join("<br>");
+	                content += '<br><br><i>Total checkins:</i> ' + venue.stats.checkinsCount;
+	            }
+	            showInfoWindow(content, map, marker);
+	        },
+            error: function(jqXHR, status, error) {
+            	var content = "<strong>Error:</strong> " + status + " - " + error;
+            	showInfoWindow(content, map, marker);
             }
-
-            var infowindow = new google.maps.InfoWindow({
-                content: content
-            });
-
-            infowindow.open(map, marker);
         });
     }
 };
